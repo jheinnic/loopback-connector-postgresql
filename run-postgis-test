@@ -1,0 +1,4 @@
+#!/bin/bash
+ROOT=`dirname $0`
+$ROOT/node_modules/.bin/mocha --timeout 20000 --require $ROOT/test-postgis/init.js $ROOT/test-postgis/*.test.js
+
