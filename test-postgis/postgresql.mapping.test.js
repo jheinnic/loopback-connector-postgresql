@@ -1,31 +1,13 @@
 process.env.NODE_ENV = 'test';
-require('should');
 
 var async = require('async');
-var jsts = require('jsts');
-var db;
+var db, geomFixture;
 
 before(function () {
-  db = getSchema();
+  lbDs = getDataSource();
+  geomFixture = getGeomFixture();
 });
 
-var geometryFactory = new jsts.geom.GeometryFactory();
-var c1 = new jsts.geom.Coordinate(1,2);
-var c2 = new jsts.geom.Coordinate(3,4);
-var c3 = new jsts.geom.Coordinate(5,5);
-var c4 = new jsts.geom.Coordinate(1,2);
-var c5 = new jsts.geom.Coordinate(5,2);
-
-var shell;
-
-shell = geometryFactory.createLinearRing([c1,c2,c3,c4]);
-var polygon01 = geometryFactory.createPolygon(shell, null);
-
-shell = geometryFactory.createLinearRing([c1,c2,c5,c4]);
-var polygon02 = geometryFactory.createPolygon(shell, null);
-
-shell = geometryFactory.createLinearRing([c1,c1,c4,c5]);
-var polygon03 = geometryFactory.createPolygon(shell, null);
 
 //expect(polygon01).toBeDefined();
 //expect(polygon02).toBeDefined();
@@ -33,7 +15,6 @@ var polygon03 = geometryFactory.createPolygon(shell, null);
 
 describe('Mapping models', function () {
   it('should honor the postgresql settings for table/column', function (done) {
-
     var schema =
     {
       "name": "TestInventory",
@@ -44,13 +25,6 @@ describe('Mapping models', function () {
         }
       },
       "properties": {
-        /*
-         "id": {
-         "type": "String", "required": true, "length": 20, "id": 1, "postgresql": {
-         "columnName": "INVENTORY_ID", "dataType": "VARCHAR", "nullable": "N"
-         }
-         },
-         */
         "productId": {
           "type": "String", "required": true, "length": 20, "id": 1, "postgresql": {
             "columnName": "product_id", "dataType": "VARCHAR", "nullable": "NO"
@@ -88,10 +62,10 @@ describe('Mapping models', function () {
         }
       }
     };
-    var models = db.modelBuilder.buildModels(schema);
-    // console.log(models);
+    var models = lbDs.modelBuilder.buildModels(schema);
+    console.log(models);
     var Model = models['TestInventory'];
-    Model.attachTo(db);
+    Model.attachTo(lbDs);
 
     db.automigrate(function (err, data) {
       async.series([
@@ -99,13 +73,13 @@ describe('Mapping models', function () {
           Model.destroyAll(callback);
         },
         function (callback) {
-          Model.create({productId: 'p001', locationId: 'l001', available: 10, total: 50, fooxyz: polygon01}, callback);
+          Model.create({productId: 'p001', locationId: 'l001', available: 10, total: 50, foopoly: geomFixture.polygon01}, callback);
         },
         function (callback) {
-          Model.create({productId: 'p001', locationId: 'l002', available: 30, total: 40, fooxyz: polygon02}, callback);
+          Model.create({productId: 'p001', locationId: 'l002', available: 30, total: 40, foopoly: geomFixture.polygon02}, callback);
         },
         function (callback) {
-          Model.create({productId: 'p002', locationId: 'l001', available: 15, total: 30, fooxyz: polygon03}, callback);
+          Model.create({productId: 'p002', locationId: 'l001', available: 15, total: 30, foopoly: geomFixture.polygon03}, callback);
         },
         function forBaselineProps(callback) {
           Model.find({fields: ['productId', 'locationId', 'available']}, function (err, results) {
@@ -153,8 +127,5 @@ describe('Mapping models', function () {
         }
       ], done);
     });
-
-
-
   });
 });
